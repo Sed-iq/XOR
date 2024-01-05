@@ -41,6 +41,7 @@ class _UserDashState extends State<UserDash> {
     });
   }
 
+  bool check = true;
   @override
   void initState() {
     super.initState();
@@ -51,6 +52,14 @@ class _UserDashState extends State<UserDash> {
     } catch (e) {
       Error("An Error has occurred");
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    setState(() {
+      check = false;
+    });
   }
 
   Future init() async {
@@ -82,6 +91,7 @@ class _UserDashState extends State<UserDash> {
     }
   }
 
+  // ignore: non_constant_identifier_names
   int BackTap = 0; // Used to count back button taps
   Future<bool> _onPop() async {
     if (state == "Home") {
@@ -109,8 +119,8 @@ class _UserDashState extends State<UserDash> {
 
   @override
   Widget build(BuildContext context) {
-    // For loading each time screen is mounted
     if (data["name"] != null) {
+      // For loading each time screen is mounted
       return Scaffold(
         backgroundColor: Colors.black,
         body: WillPopScope(
@@ -201,7 +211,7 @@ class _UserDashState extends State<UserDash> {
               unselectedItemColor: Colors.grey[500],
               showSelectedLabels: false,
               showUnselectedLabels: false,
-              selectedItemColor: Color.fromRGBO(120, 56, 233, 1),
+              selectedItemColor: const Color.fromRGBO(120, 56, 233, 1),
               items: [
                 BottomNavigationBarItem(
                     icon: Icon(MdiIcons.message),
@@ -216,7 +226,7 @@ class _UserDashState extends State<UserDash> {
         resizeToAvoidBottomInset: true,
       );
     } else {
-      return Full_Load(); // Returns an empty container
+      return const Full_Load(); // Returns an empty container
     }
   }
 }

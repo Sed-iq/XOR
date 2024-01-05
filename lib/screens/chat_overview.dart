@@ -1,5 +1,4 @@
 // Chat list screen
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:xor/components/loginBtn.dart';
@@ -9,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xor/screens/login.dart';
 import 'package:xor/components/send_data.dart';
 import "package:http/http.dart" as http;
-
 import 'package:xor/components/error_toast.dart';
 import "package:xor/components/json_conv.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -49,7 +47,7 @@ class _Chat_overviewState extends State<Chat_overview> {
           arr.add(HistoryModal(
             id: widget.conversations[i]["id"],
             title: widget.conversations[i]["title"],
-            date: "...",
+            date: "....",
             history: ".......",
           ));
         }
@@ -133,6 +131,7 @@ class _Chat_overviewState extends State<Chat_overview> {
               builder: (BuildContext context) {
                 return CreateModal(
                   controller: title,
+                  mainScreenContext: $context,
                   token: widget.token,
                 );
               });
@@ -157,9 +156,14 @@ class _Chat_overviewState extends State<Chat_overview> {
 //
 
 class CreateModal extends StatefulWidget {
+  final BuildContext mainScreenContext;
   final TextEditingController controller;
   final String token;
-  const CreateModal({super.key, required this.controller, required this.token});
+  const CreateModal(
+      {super.key,
+      required this.mainScreenContext,
+      required this.controller,
+      required this.token});
 
   @override
   State<CreateModal> createState() => _CreateModalState();
@@ -211,11 +215,23 @@ class _CreateModalState extends State<CreateModal> {
                         barrierColor: Colors.transparent,
                         builder: (BuildContext $context) {
                           createConv(widget.controller.text.trim()).then((res) {
+                            if (res != null) {
+                              Navigator.of(context).pop();
+                              Navigator.of($context).pop();
+                              Navigator.of(widget.mainScreenContext).push(
+                                  MaterialPageRoute(
+                                      builder: (BuildContext context) =>
+                                          Chat(id: res)));
+                            } else {
+                              Navigator.of($context).pop();
+                            }
+                          }).catchError((err) {
+                            print(err);
+                            Error("There seems to be an error");
                             Navigator.of($context).pop();
                           });
                           return WillPopScope(
                               onWillPop: () async {
-                                print("nice try");
                                 return false;
                               },
                               child: load());
@@ -237,15 +253,17 @@ class _CreateModalState extends State<CreateModal> {
 
   Future createConv(String title) async {
     // Function to create new conversation
-    sec_post({"title": title}, "/conversation", widget.token).then((response) {
+    return sec_post({"title": title}, "/conversation", widget.token)
+        .then((response) {
       if (response["status"] == 200) {
         return response["message"];
       } else if (response["status"] == 0) {
+        throw 0;
       } else {
         throw "";
       }
     }).catchError((e) {
-      print(e);
+      Error("There seems to be an error.");
       return null;
     });
   }
@@ -301,9 +319,10 @@ class HistoryModal extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Txt(
-                            text: date,
+                            text: title,
+                            weight: FontWeight.w500,
                             colors: Colors.grey[400],
-                            size: 13,
+                            size: 19,
                           ),
                         ]),
                     SizedBox(

@@ -7,6 +7,7 @@ import 'package:xor/components/txt.dart';
 import "package:http/http.dart" as http;
 import 'package:xor/components/error_toast.dart';
 import 'package:xor/screens/loading.dart';
+import "package:xor/components/config.dart";
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class Chat extends StatefulWidget {
@@ -50,7 +51,6 @@ class _ChatState extends State<Chat> {
   @override
   void dispose() {
     super.dispose();
-
     socket.disconnect();
   }
 
@@ -106,7 +106,6 @@ class _ChatState extends State<Chat> {
     Map _prompt = {
       "sender": userId,
       "message": prompt,
-      "engine": engine,
       "conversation": widget.id,
       "time": time,
     };
@@ -126,8 +125,7 @@ class _ChatState extends State<Chat> {
   Future load() async {
     // Loads the chat data
     try {
-      var res = await http.get(
-          Uri.parse("http://192.168.43.71:5000/chat/" + widget.id),
+      var res = await http.get(Uri.parse("$URL/chat/" + widget.id),
           headers: {"x-token": token});
       if (res.statusCode == 200) {
         setState(() {
@@ -137,11 +135,11 @@ class _ChatState extends State<Chat> {
           };
         });
       } else {
-        Error("There seems to be and error getting chats");
+        Error("There seems to be an error getting chats");
         Navigator.pop(context);
       }
     } catch (e) {
-      Error("There seems to be and error getting chats");
+      Error("There seems to be an error getting chats");
       Navigator.pop(context);
     }
   }
@@ -211,12 +209,12 @@ class _ChatState extends State<Chat> {
           child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Image(
+          const Image(
             image: AssetImage("images/chat_welcome.gif"),
             height: 150,
             width: 150,
           ),
-          SizedBox(
+          const SizedBox(
             height: 20,
           ),
           Txt(text: "Welcome to XOR, type a prompt to begin.")
@@ -240,10 +238,11 @@ class _ChatState extends State<Chat> {
                         setState(() {
                           btnColor = Color.fromRGBO(120, 56, 233, .4);
                         });
-                      } else
+                      } else {
                         setState(() {
                           btnColor = Colors.grey[900];
                         });
+                      }
                     },
                     hintText: "Tell me something...",
                     controller: message)),
@@ -298,7 +297,7 @@ class UserMsg extends StatelessWidget {
                       margin: EdgeInsets.fromLTRB(0, 0, 20, 0),
                       padding:
                           EdgeInsets.symmetric(vertical: 17, horizontal: 23),
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Color.fromRGBO(120, 56, 233, .3),
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(10),
@@ -346,7 +345,7 @@ class BotBubble extends StatelessWidget {
                           EdgeInsets.symmetric(vertical: 17, horizontal: 23),
                       decoration: BoxDecoration(
                         color: Colors.grey[900],
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(10),
                             topRight: Radius.circular(10),
                             bottomRight: Radius.circular(10)),
