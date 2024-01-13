@@ -1,8 +1,9 @@
 // Used to send data to the server
 import "package:http/http.dart" as http;
 import 'package:xor/components/json_conv.dart';
+import "package:xor/components/config.dart";
 
-var url = "http://192.168.43.71:5000";
+var url = URL;
 Future<Map> send(Map body, String method, String route) async {
   switch (method) {
     case "POST":
@@ -11,6 +12,25 @@ Future<Map> send(Map body, String method, String route) async {
       return get(body, route);
     default:
       return {};
+  }
+}
+
+Future<Map> chat(Map data, String route, String token) async {
+  try {
+    var response = await http.post(Uri.parse("$url$route"),
+        headers: {"x-token": token}, body: data);
+    if (response.statusCode == 200) {
+      return {"status": 200, "message": json(response.body)["message"]};
+    } else {
+      return {
+        "status": response.statusCode,
+        "message": json(response.body)["message"]
+      };
+    }
+  } catch (err) {
+    // Network connection error
+    print(err);
+    return {"status": 0};
   }
 }
 

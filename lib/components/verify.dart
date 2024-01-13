@@ -1,8 +1,9 @@
 // Checks before the component ran
 import 'package:http/http.dart' as http;
+import 'package:xor/components/config.dart';
 import 'package:xor/components/error_toast.dart';
 
-Uri url = Uri.parse("http://192.168.43.71:5000/dashboard");
+Uri url = Uri.parse("$URL/dashboard");
 Future<bool> verify(String token) async {
   try {
     var response = await http.get(url, headers: {"x-token": token});

@@ -18,72 +18,15 @@ class UserDash extends StatefulWidget {
 }
 
 class _UserDashState extends State<UserDash> {
-  String token = "";
-  Map data = {};
-  late SharedPreferences cache;
-  void load() {
-    send({"token": token}, "GET", "/dashboard").then((response) {
-      if (response["status"] == 200) {
-        Future.delayed(const Duration(milliseconds: 700), () {
-          setState(() {
-            data = {
-              "name": response["message"]["name"],
-              "conversations": response["message"]["conversations"]
-            };
-          }); // Adds data to state.
-        });
-      } else {
-        cache.clear();
-        Navigator.pushReplacement(context,
-            MaterialPageRoute(builder: (BuildContext context) => Login()));
-        Error(response["message"]);
-      }
-    });
-  }
-
-  bool check = true;
-  @override
-  void initState() {
-    super.initState();
-    try {
-      init().then((value) {
-        load();
-      });
-    } catch (e) {
-      Error("An Error has occurred");
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    setState(() {
-      check = false;
-    });
-  }
-
-  Future init() async {
-    cache = await SharedPreferences.getInstance();
-    String? token = cache.getString("token");
-    if (token != null) {
-      setState(() {
-        this.token = token;
-      });
-    }
-  }
-
   var base_color = Colors.grey.shade600;
   String username = "";
   var state = "Home";
   int __index = 0;
-  Widget display(BuildContext context, String $state, Map $data) {
+  Widget display() {
     // checks state change and returns display that matches state
-    switch ($state) {
+    switch (state) {
       case "Home":
-        return Chat_overview(
-          conversations: $data["conversations"],
-          token: token,
-        );
+        return Chat_overview();
       case "Setting":
         return const Setting();
       default:
@@ -119,114 +62,56 @@ class _UserDashState extends State<UserDash> {
 
   @override
   Widget build(BuildContext context) {
-    if (data["name"] != null) {
-      // For loading each time screen is mounted
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: WillPopScope(
-          onWillPop: _onPop,
-          child: SafeArea(
-            child: Stack(children: [
-              display(context, state, data),
-              //Align(
-              //  alignment: Alignment.bottomCenter,
-              //  child: Container(
-              //    decoration: BoxDecoration(color: Colors.black),
-              //    child: Padding(
-              //      padding: EdgeInsets.symmetric(horizontal: 20),
-              //      child: Row(
-              //        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //        children: [
-              //          BaseBtn(
-              //            state: state,
-              //            onTap: () {
-              //              setState(() {
-              //                state = "Home";
-              //              });
-              //            },
-              //            ico: CupertinoIcons.app_fill,
-              //            text: "Home",
-              //          ),
-              //          BaseBtn(
-              //            state: state,
-              //            onTap: () {
-              //              setState(() {
-              //                state = "Chats";
-              //              });
-              //            },
-              //            ico: CupertinoIcons.chat_bubble_2,
-              //            text: "Chats",
-              //          ),
-              //          BaseBtn(
-              //            state: state,
-              //            onTap: () {
-              //              setState(() {
-              //                state = "Pay";
-              //              });
-              //            },
-              //            ico: CupertinoIcons.money_dollar_circle,
-              //            text: "Pay",
-              //          ),
-              //          BaseBtn(
-              //            state: state,
-              //            onTap: () {
-              //              setState(() {
-              //                state = "Setting";
-              //              });
-              //            },
-              //            ico: Icons.settings,
-              //            text: "Setting",
-              //          ),
-              //        ],
-              //      ),
-              //    ),
-              //  ),
-              //),
-            ]),
-          ),
+    // For loading each time screen is mounted
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: WillPopScope(
+        onWillPop: _onPop,
+        child: SafeArea(
+          child: Stack(children: [
+            display(),
+          ]),
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-              border: Border(
-                  top: BorderSide(color: Colors.grey[800]!, width: 0.5))),
-          child: BottomNavigationBar(
-              currentIndex: __index,
-              onTap: (index) {
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+            border:
+                Border(top: BorderSide(color: Colors.grey[800]!, width: 0.5))),
+        child: BottomNavigationBar(
+            currentIndex: __index,
+            onTap: (index) {
+              setState(() {
+                __index = index;
+              });
+              if (state == "Home" && index == 1) {
                 setState(() {
-                  __index = index;
+                  state = "Setting";
                 });
-                if (state == "Home" && index == 1) {
+              } else {
+                if (index != 1) {
                   setState(() {
-                    state = "Setting";
+                    state = "Home";
                   });
-                } else {
-                  if (index != 1) {
-                    setState(() {
-                      state = "Home";
-                    });
-                  }
                 }
-              },
-              backgroundColor: Colors.black,
-              unselectedItemColor: Colors.grey[500],
-              showSelectedLabels: false,
-              showUnselectedLabels: false,
-              selectedItemColor: const Color.fromRGBO(120, 56, 233, 1),
-              items: [
-                BottomNavigationBarItem(
-                    icon: Icon(MdiIcons.message),
-                    label: "Chats",
-                    tooltip: "Chats"),
-                const BottomNavigationBarItem(
-                    icon: Icon(Icons.settings),
-                    label: "Settings",
-                    tooltip: "Settings"),
-              ]),
-        ),
-        resizeToAvoidBottomInset: true,
-      );
-    } else {
-      return const Full_Load(); // Returns an empty container
-    }
+              }
+            },
+            backgroundColor: Colors.black,
+            unselectedItemColor: Colors.grey[500],
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            selectedItemColor: const Color.fromRGBO(120, 56, 233, 1),
+            items: [
+              BottomNavigationBarItem(
+                  icon: Icon(MdiIcons.message),
+                  label: "Chats",
+                  tooltip: "Chats"),
+              const BottomNavigationBarItem(
+                  icon: Icon(Icons.settings),
+                  label: "Settings",
+                  tooltip: "Settings"),
+            ]),
+      ),
+      resizeToAvoidBottomInset: true,
+    );
   }
 }

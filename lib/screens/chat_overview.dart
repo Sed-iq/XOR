@@ -1,6 +1,8 @@
 // Chat list screen
+// ignore_for_file: camel_case_types
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:socket_io_client/socket_io_client.dart';
 import 'package:xor/components/loginBtn.dart';
 import 'package:xor/components/txt.dart';
 import 'package:xor/screens/chat.dart';
@@ -15,12 +17,8 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import 'package:xor/screens/subs/loader.dart';
 
 class Chat_overview extends StatefulWidget {
-  final List conversations;
-  final String token;
   const Chat_overview({
     super.key,
-    required this.conversations,
-    required this.token,
   });
   @override
   State<Chat_overview> createState() => _Chat_overviewState();
@@ -28,25 +26,29 @@ class Chat_overview extends StatefulWidget {
 
 class _Chat_overviewState extends State<Chat_overview> {
   // Lists of chats
-
+  late Map data = {};
   List<Widget> history() {
-    List<Widget> arr = [];
-    if (widget.conversations.length > 0) {
-      for (var i = 0; i < widget.conversations.length; i++) {
-        if (widget.conversations[i]['chats'].length > 0) {
+    List<Widget> arr = [
+      const SizedBox(
+        height: 20,
+      )
+    ];
+    if (data["conversations"].length > 0) {
+      for (var i = 0; i < data["conversations"].length; i++) {
+        if (data["conversations"][i]['chats'].length > 0) {
           arr.add(HistoryModal(
-              id: widget.conversations[i]["id"],
-              title: widget.conversations[i]["title"],
-              date: widget.conversations[i]["chats"]
-                  [widget.conversations[i]["chats"].length - 1]["time"],
-              history: widget.conversations[i]["chats"]
-                      [widget.conversations[i]["chats"].length - 1]
+              id: data["conversations"][i]["id"],
+              title: data["conversations"][i]["title"],
+              date: data["conversations"][i]["chats"]
+                  [data["conversations"][i]["chats"].length - 1]["time"],
+              history: data["conversations"][i]["chats"]
+                      [data["conversations"][i]["chats"].length - 1]
                   ["message"])); // Adding Modal to the array stack
-          // widget.conversations[i]["chats"].length -1 is to get the last element in the array
+          // data["conversations"][i]["chats"].length -1 is to get the last element in the array
         } else {
           arr.add(HistoryModal(
-            id: widget.conversations[i]["id"],
-            title: widget.conversations[i]["title"],
+            id: data["conversations"][i]["id"],
+            title: data["conversations"][i]["title"],
             date: "....",
             history: ".......",
           ));
@@ -56,60 +58,188 @@ class _Chat_overviewState extends State<Chat_overview> {
     return arr;
   }
 
+  String token = "";
   late SharedPreferences cache;
+  void load() {
+    send({"token": token}, "GET", "/dashboard").then((response) {
+      if (response["status"] == 200) {
+        if (mounted) {
+          cache.setString("userid", response["message"]["id"]);
+          setState(() {
+            data = {
+              "name": response["message"]["name"],
+              "conversations": response["message"]["conversations"]
+            };
+          }); // Adds data to state.
+        }
+      } else {
+        // cache.remove("token");
+        // Navigator.pushReplacement(
+        //     context,
+        //     MaterialPageRoute(
+        //         builder: (BuildContext context) => const Login()));
+        // Error(response["message"]);
+      }
+    }).catchError((e) {
+      Error("There seems to be an error");
+      // Navigator.pushReplacement(context,
+      //     MaterialPageRoute(builder: (BuildContext context) => const Login()));
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    init();
+    init().then((value) {
+      load();
+    }).catchError((e) {
+      Error("There seems to be an error");
+      print(e);
+    });
   }
 
   Future init() async {
     cache = await SharedPreferences.getInstance();
+    String? token = cache.getString("token");
+    if (token != null) {
+      setState(() {
+        this.token = token;
+      });
+    }
   }
 
   // ignore: non_constant_identifier_names
-  Widget Base() {
-    if (widget.conversations.length > 0) {
-      return SingleChildScrollView(
-          child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: history(),
-        ),
-      ));
-    } else {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          //crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Image(
-              image: AssetImage("images/welcome.gif"),
-              width: 180,
-              height: 180,
-            ).animate().scale(),
-            const SizedBox(
-              height: 40,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+  Widget Base(Map $data) {
+    if ($data["conversations"].length > 0) {
+      load();
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            decoration: BoxDecoration(
+                border:
+                    Border(bottom: BorderSide(color: Colors.grey.shade800))),
+            height: 80,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Icon(
-                  MdiIcons.alert,
-                  color: Colors.amber,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                Txt(
-                  text: "You have no chats",
-                  size: 18,
-                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Color.fromARGB(255, 44, 44, 44),
+                        child: Icon(
+                          MdiIcons.chatOutline,
+                          color: Colors.white,
+                          size: 17,
+                        ),
+                      ),
+                      const SizedBox(
+                        width: 16,
+                      ),
+                      Txt(
+                        text: "Chats",
+                        size: 19.5,
+                        weight: FontWeight.bold,
+                      )
+                    ],
+                  ),
+                ).animate().slideX(
+                    curve: Curves.ease,
+                    duration: const Duration(milliseconds: 100)),
               ],
-            )
-          ],
-        ),
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: history(),
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Stack(
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              decoration: BoxDecoration(
+                  border:
+                      Border(bottom: BorderSide(color: Colors.grey.shade800))),
+              height: 80,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          backgroundColor: Color.fromARGB(255, 44, 44, 44),
+                          child: Icon(
+                            MdiIcons.human,
+                            color: Colors.white,
+                            size: 17,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 16,
+                        ),
+                        Txt(
+                          text: "Chats",
+                          size: 19.5,
+                          weight: FontWeight.bold,
+                        )
+                      ],
+                    ),
+                  ).animate().slideX(
+                      curve: Curves.ease,
+                      duration: const Duration(milliseconds: 100)),
+                ],
+              ),
+            ),
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Image(
+                  image: AssetImage("images/welcome.gif"),
+                  width: 180,
+                  height: 180,
+                ).animate().scale(),
+                const SizedBox(
+                  height: 40,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      MdiIcons.alert,
+                      color: Colors.amber,
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    Txt(
+                      text: "You have no chats",
+                      size: 18,
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ],
       );
     }
   }
@@ -118,37 +248,45 @@ class _Chat_overviewState extends State<Chat_overview> {
   @override
   Widget build(BuildContext $context) {
     final title = TextEditingController();
-    return Scaffold(
-      backgroundColor: Colors.black,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showModalBottomSheet(
-              context: context,
-              shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20))),
-              backgroundColor: Colors.grey[900],
-              builder: (BuildContext context) {
-                return CreateModal(
-                  controller: title,
-                  mainScreenContext: $context,
-                  token: widget.token,
-                );
-              });
-        },
-        //icon: Icon(),
-        icon: Icon(MdiIcons.chartBubble),
-        label: Txt(text: "New Chat"),
-        tooltip: "Create new chat",
+    if (data["name"] != null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            showModalBottomSheet(
+                showDragHandle: true,
+                context: context,
+                shape: const RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20))),
+                backgroundColor: Colors.grey[900],
+                builder: (BuildContext context) {
+                  return CreateModal(
+                    onCreate: () {
+                      load();
+                    },
+                    controller: title,
+                    mainScreenContext: $context,
+                    token: token,
+                  );
+                });
+          },
+          //icon: Icon(),
+          icon: Icon(MdiIcons.chartBubble),
+          label: Txt(text: "New Chat"),
+          tooltip: "Create new chat",
 
-        backgroundColor: Color.fromRGBO(120, 56, 233, 1),
-      ).animate().slideX(
-          begin: 1,
-          end: 0,
-          curve: Curves.ease,
-          duration: Duration(milliseconds: 200)),
-      body: SafeArea(child: Base()),
-    );
+          backgroundColor: const Color.fromRGBO(120, 56, 233, 1),
+        ).animate().slideX(
+            begin: 1,
+            end: 0,
+            curve: Curves.ease,
+            duration: const Duration(milliseconds: 200)),
+        body: SafeArea(child: Base(data)),
+      );
+    } else {
+      return const Pre_Load();
+    }
   }
 }
 
@@ -158,9 +296,11 @@ class _Chat_overviewState extends State<Chat_overview> {
 class CreateModal extends StatefulWidget {
   final BuildContext mainScreenContext;
   final TextEditingController controller;
+  final Function onCreate; // If successfully created
   final String token;
   const CreateModal(
       {super.key,
+      required this.onCreate,
       required this.mainScreenContext,
       required this.controller,
       required this.token});
@@ -179,19 +319,6 @@ class _CreateModalState extends State<CreateModal> {
       child: Stack(
         children: [
           ListView(children: [
-            const SizedBox(
-              height: 12,
-            ),
-            const Divider(
-              thickness: 2.4,
-              color: Colors.grey,
-              height: 2,
-              indent: 180,
-              endIndent: 180,
-            ),
-            const SizedBox(
-              height: 20,
-            ),
             Padding(
               padding: EdgeInsets.only(bottom: 3),
               child: Normal_input(
@@ -216,6 +343,7 @@ class _CreateModalState extends State<CreateModal> {
                         builder: (BuildContext $context) {
                           createConv(widget.controller.text.trim()).then((res) {
                             if (res != null) {
+                              widget.onCreate();
                               Navigator.of(context).pop();
                               Navigator.of($context).pop();
                               Navigator.of(widget.mainScreenContext).push(
@@ -234,7 +362,7 @@ class _CreateModalState extends State<CreateModal> {
                               onWillPop: () async {
                                 return false;
                               },
-                              child: load());
+                              child: $load());
                         });
                   }
                 }),
@@ -244,7 +372,7 @@ class _CreateModalState extends State<CreateModal> {
     );
   }
 
-  Widget load() {
+  Widget $load() {
     return const Dialog.fullscreen(
       backgroundColor: Color.fromARGB(80, 0, 0, 0),
       child: Pre_Load(),
@@ -296,7 +424,7 @@ class HistoryModal extends StatelessWidget {
                   ))),
       child: Container(
         //margin: EdgeInsets.symmetric(vertical: 10),
-        padding: EdgeInsets.fromLTRB(10, 5, 10, 0),
+        padding: const EdgeInsets.fromLTRB(23, 5, 23, 0),
         child: Row(
           children: [
             CircleAvatar(

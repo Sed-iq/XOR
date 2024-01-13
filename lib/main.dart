@@ -16,6 +16,5 @@ void main() {
       title: "XOR",
       scrollBehavior: MyScrollBehaviour(),
       themeMode: ThemeMode.dark,
-      //theme: ThemeData(fontFamily: "Roboto"),
       home: const Loading()));
 }
