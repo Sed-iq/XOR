@@ -140,7 +140,7 @@ class _Setting_baseState extends State<Setting_base> {
                                               foregroundColor:
                                                   Colors.transparent),
                                           onPressed: () async {
-                                            await cache.clear();
+                                            await cache.remove("token");
 
                                             Navigator.of(context).pop(context);
                                             Navigator.pushReplacement(
