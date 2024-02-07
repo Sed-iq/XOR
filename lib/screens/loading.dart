@@ -4,6 +4,7 @@ import "package:xor/components/txt.dart";
 import "package:xor/components/verify.dart";
 import "package:xor/screens/dashboard.dart";
 import "package:xor/screens/login.dart";
+import '../components/error_toast.dart';
 import "package:shared_preferences/shared_preferences.dart";
 
 class Loading extends StatefulWidget {
@@ -20,45 +21,38 @@ class _LoadingState extends State<Loading> {
 
   void load() {
     init().then((result) async {
-      try {
-        if (result == true) {
-          verify(token).then((res) {
-            if (res == true) {
-              Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (BuildContext context) {
-                return const UserDash();
-              }));
-            } else {
-              throw res;
-            }
-          }).catchError((error) {
+      if (result == true) {
+        verify(token).then((res) {
+          if (res == true) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (BuildContext context) {
+              return const UserDash();
+            }));
+          } else {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (BuildContext context) {
               return const Login();
             }));
-            print(error);
+          }
+        }).catchError((error) {
+          // Verify sending error i.e no network
+          setState(() {
+            network = false;
           });
-          // print("hey");
-          // bool auth = await verify(token);
-          // if (auth == true) {
-
-          // } else {
-          //   throw auth;
-          // }
-        } else {
-          throw result;
-        }
-      } catch (e) {
-        print(e);
+        });
+      } else {
+        // No token found
         Navigator.pushReplacement(context,
             MaterialPageRoute(builder: (BuildContext context) {
           return const Login();
         }));
       }
     }).catchError((err) {
-      setState(() {
-        network = false;
-      });
+      // Error initiating cache
+      Navigator.pushReplacement(context,
+          MaterialPageRoute(builder: (BuildContext context) {
+        return const Login();
+      }));
     });
   }
 
@@ -124,7 +118,24 @@ class _LoadingState extends State<Loading> {
                 setState(() {
                   btntxt = "Retrying...";
                 });
-                load();
+                verify(token).then((value) {
+                  if (value == true) {
+                    Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (BuildContext context) {
+                      return const UserDash();
+                    }));
+                  } else {
+                    Navigator.pushReplacement(context,
+                        MaterialPageRoute(builder: (BuildContext context) {
+                      return const Login();
+                    }));
+                  }
+                }).catchError((err) {
+                  Error("Check internet connection");
+                  setState(() {
+                    btntxt = "Retry";
+                  });
+                });
               },
               child: Txt(
                 text: btntxt,

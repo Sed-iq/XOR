@@ -404,7 +404,7 @@ class HistoryModal extends StatelessWidget {
   final String id;
   final String history;
   const HistoryModal(
-      {key,
+      {super.key,
       required this.title,
       required this.date,
       required this.id,
@@ -430,12 +430,12 @@ class HistoryModal extends StatelessWidget {
             CircleAvatar(
               radius: 20,
               backgroundColor: Colors.teal[900],
-              child: Icon(
+              child: const Icon(
                 Icons.military_tech_outlined,
                 size: 23,
               ),
             ),
-            SizedBox(
+            const SizedBox(
               width: 12,
             ),
             Expanded(
@@ -492,14 +492,14 @@ class Normal_input extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: TextField(
         controller: controller,
-        style: TextStyle(color: Colors.white, fontSize: 13),
+        style: const TextStyle(color: Colors.white, fontSize: 13),
         decoration: InputDecoration(
-            contentPadding: EdgeInsets.symmetric(horizontal: 10),
-            enabledBorder: OutlineInputBorder(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+            enabledBorder: const OutlineInputBorder(
                 borderSide: BorderSide(color: Colors.transparent)),
             fillColor: bg ?? Colors.grey.shade800,
             filled: true,
-            hintStyle: TextStyle(color: Colors.white),
+            hintStyle: const TextStyle(color: Colors.white),
             hintText: hintText),
       ),
     );
