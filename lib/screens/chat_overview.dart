@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xor/screens/login.dart';
 import 'package:xor/components/send_data.dart';
 import "package:http/http.dart" as http;
+import 'package:connectivity_checker/connectivity_checker.dart';
 import 'package:xor/components/error_toast.dart';
 import "package:xor/components/json_conv.dart";
 import "package:flutter_animate/flutter_animate.dart";
@@ -130,7 +131,7 @@ class _Chat_overviewState extends State<Chat_overview> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CircleAvatar(
-                        backgroundColor: Color.fromARGB(255, 44, 44, 44),
+                        backgroundColor: const Color.fromARGB(255, 44, 44, 44),
                         child: Icon(
                           MdiIcons.chatOutline,
                           color: Colors.white,
@@ -183,7 +184,8 @@ class _Chat_overviewState extends State<Chat_overview> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         CircleAvatar(
-                          backgroundColor: Color.fromARGB(255, 44, 44, 44),
+                          backgroundColor:
+                              const Color.fromARGB(255, 44, 44, 44),
                           child: Icon(
                             MdiIcons.human,
                             color: Colors.white,
@@ -320,7 +322,7 @@ class _CreateModalState extends State<CreateModal> {
         children: [
           ListView(children: [
             Padding(
-              padding: EdgeInsets.only(bottom: 3),
+              padding: const EdgeInsets.only(bottom: 3),
               child: Normal_input(
                 bg: Colors.grey[800],
                 hintText: "Name of the chat",
@@ -415,13 +417,26 @@ class HistoryModal extends StatelessWidget {
     return TextButton(
       style: TextButton.styleFrom(
           foregroundColor: Colors.transparent,
-          padding: EdgeInsets.fromLTRB(0, 0, 0, 30)),
-      onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (BuildContext context) => Chat(
-                    id: id,
-                  ))),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 30)),
+      onPressed: () async {
+        if (await ConnectivityWrapper.instance.isConnected) {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => Chat(
+                        id: id,
+                      )));
+        } else {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => Chat(
+                        id: id,
+                      )));
+          // TODO: Remove when done
+          // Error("No internet connection");
+        }
+      },
       child: Container(
         //margin: EdgeInsets.symmetric(vertical: 10),
         padding: const EdgeInsets.fromLTRB(23, 5, 23, 0),
@@ -443,17 +458,19 @@ class HistoryModal extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Txt(
-                            text: title,
-                            weight: FontWeight.w500,
-                            colors: Colors.grey[400],
-                            size: 19,
-                          ),
-                        ]),
-                    SizedBox(
+                    WTxt(
+                      text: title,
+                      overflow: TextOverflow.visible,
+                      weight: FontWeight.w500,
+                      colors: Colors.grey[400],
+                      size: 19,
+                    ),
+                    // Row(
+                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //     children: [
+
+                    //     ]),
+                    const SizedBox(
                       height: 4,
                     ),
                     Row(
@@ -461,6 +478,7 @@ class HistoryModal extends StatelessWidget {
                         Expanded(
                             child: Text(
                           history,
+                          maxLines: 1,
                           style: TextStyle(
                               overflow: TextOverflow.ellipsis,
                               color: Colors.grey[400]),
@@ -477,10 +495,10 @@ class HistoryModal extends StatelessWidget {
 }
 
 class Normal_input extends StatelessWidget {
-  final controller;
+  final TextEditingController controller;
   final Color? bg;
   final String hintText;
-  Normal_input({
+  const Normal_input({
     super.key,
     this.bg,
     required this.hintText,

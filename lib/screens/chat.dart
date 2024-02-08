@@ -1,6 +1,7 @@
 // Chat screen
 // ignore_for_file: non_constant_identifier_names
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ import 'package:xor/components/txt.dart';
 import "package:http/http.dart" as http;
 import 'package:xor/components/error_toast.dart';
 import 'package:xor/screens/loading.dart';
+import 'package:clipboard/clipboard.dart';
 import "package:xor/components/config.dart";
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -140,7 +142,7 @@ class _ChatState extends State<Chat> {
     } catch (e) {
       print(e);
       Error("There seems to be an error getting chats");
-      // Navigator.pop(context);
+      Navigator.pop(context);
     }
   }
 
@@ -163,44 +165,48 @@ class _ChatState extends State<Chat> {
         appBar: AppBar(
           backgroundColor: Colors.black,
           shape: Border(bottom: BorderSide(color: Colors.grey[800]!)),
-          actions: [
-            IconButton(
-                onPressed: () {
-                  setState(() {
-                    type = "text";
-                  });
-                },
-                color: typeColor("text"),
-                tooltip: "Text Ai",
-                icon: const Icon(Icons.text_snippet)),
-            const SizedBox(width: 10),
-            IconButton(
-                onPressed: () {
-                  setState(() {
-                    type = "image";
-                  });
-                },
-                tooltip: "Image Ai",
-                color: typeColor("image"),
-                icon: const Icon(Icons.image)),
-            const SizedBox(width: 10),
-          ],
-          title: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.teal[900],
-                radius: 20,
-                child: const Icon(
-                  Icons.military_tech_outlined,
-                  size: 18,
-                  color: Colors.white,
+          title: Container(
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.teal[900],
+                  radius: 20,
+                  child: const Icon(
+                    Icons.military_tech_outlined,
+                    size: 18,
+                    color: Colors.white,
+                  ),
                 ),
-              ),
-              const SizedBox(
-                width: 17,
-              ),
-              Txt(text: title!)
-            ],
+                const SizedBox(
+                  width: 17,
+                ),
+                Expanded(
+                    child: WTxt(
+                  text: title!,
+                  overflow: TextOverflow.ellipsis,
+                )),
+                IconButton(
+                    onPressed: () {
+                      setState(() {
+                        type = "text";
+                      });
+                    },
+                    color: typeColor("text"),
+                    tooltip: "Text Ai",
+                    icon: const Icon(Icons.text_snippet)),
+                const SizedBox(width: 10),
+                IconButton(
+                    onPressed: () {
+                      setState(() {
+                        type = "image";
+                      });
+                    },
+                    tooltip: "Image Ai",
+                    color: typeColor("image"),
+                    icon: const Icon(Icons.image)),
+                const SizedBox(width: 10),
+              ],
+            ),
           ),
         ),
         body: Column(
@@ -271,16 +277,16 @@ class _ChatState extends State<Chat> {
         ),
       );
     } else {
-      return Center(
+      return const Center(
               child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Image(
+          Image(
             image: AssetImage("images/chat_welcome.gif"),
             height: 150,
             width: 150,
           ),
-          const SizedBox(
+          SizedBox(
             height: 20,
           ),
           Txt(
@@ -406,11 +412,17 @@ class UserMsg extends StatelessWidget {
   }
 }
 
-class BotBubble extends StatelessWidget {
+class BotBubble extends StatefulWidget {
   final String message;
   final String type;
   const BotBubble({super.key, required this.message, required this.type});
 
+  @override
+  State<BotBubble> createState() => _BotBubbleState();
+}
+
+class _BotBubbleState extends State<BotBubble> {
+  bool showCopy = false;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -423,47 +435,122 @@ class BotBubble extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Container(
-                      margin: const EdgeInsets.fromLTRB(0, 0, 20, 0),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 17, horizontal: 23),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                      ),
-                      child: Builder(builder: (context) {
-                        if (type == "text") {
-                          return Text(
-                            message.trim(),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 15),
-                          );
-                        } else if (type == "image") {
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: message,
-                              height: 240,
-                              width: 240,
-                              placeholder: (context, progress) => Center(
-                                child: CircularProgressIndicator(
-                                    color: Colors.purple.shade700,
-                                    strokeWidth: 2.5),
+                  GestureDetector(
+                    onLongPress: () {
+                      if (showCopy == true) {
+                        setState(() {
+                          showCopy = false;
+                        });
+                      } else {
+                        setState(() {
+                          showCopy = true;
+                        });
+                      }
+                    },
+                    child: Container(
+                        margin: const EdgeInsets.fromLTRB(0, 0, 20, 0),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 17, horizontal: 23),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(10),
+                              topRight: Radius.circular(10),
+                              bottomRight: Radius.circular(10)),
+                        ),
+                        child: Builder(builder: (context) {
+                          if (widget.type == "text") {
+                            return Text(
+                              widget.message.trim(),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 15),
+                            );
+                          } else if (widget.type == "image") {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: CachedNetworkImage(
+                                imageUrl: widget.message,
+                                height: 240,
+                                width: 240,
+                                errorListener: (err) {
+                                  Error("Error getting image");
+                                },
+                                errorWidget: (context, url, error) {
+                                  return const Center(
+                                      child: Icon(
+                                    Icons.broken_image_rounded,
+                                    color: Colors.red,
+                                    size: 18,
+                                  ));
+                                },
+                                placeholder: (context, progress) => Center(
+                                  child: CircularProgressIndicator(
+                                      color: Colors.purple.shade700,
+                                      strokeWidth: 2.5),
+                                ),
                               ),
-                            ),
-                          );
-                        } else {
-                          return Container(
-                            child: Txt(text: "Type not specified"),
-                          );
-                        }
-                      })),
-                  const SizedBox(
-                    height: 10,
+                            );
+                          } else {
+                            return const Txt(text: "Type not specified");
+                          }
+                        })),
                   ),
+                  (widget.type == "text" && showCopy == true)
+                      ? GestureDetector(
+                          onTap: () {
+                            FlutterClipboard.copy(widget.message).then((value) {
+                              // Text copied show snack bar
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                duration: const Duration(milliseconds: 400),
+                                content: Row(
+                                  children: [
+                                    Icon(
+                                      CupertinoIcons.check_mark_circled_solid,
+                                      color: Colors.green[400],
+                                    ),
+                                    const SizedBox(
+                                      width: 10,
+                                    ),
+                                    const Txt(
+                                      text: "Text copied to your clipboard",
+                                      size: 16,
+                                      weight: FontWeight.w500,
+                                      colors:
+                                          Color.fromARGB(255, 202, 202, 202),
+                                    )
+                                  ],
+                                ),
+                                backgroundColor: Colors.green[900],
+                              ));
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 14),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.copy,
+                                  size: 14,
+                                  color: Colors.grey[300],
+                                ),
+                                const SizedBox(
+                                  width: 4,
+                                ),
+                                const Txt(text: "Copy")
+                              ],
+                            ),
+                          ),
+                        )
+                          .animate()
+                          .slideX(duration: const Duration(milliseconds: 400))
+                          .fadeIn(duration: const Duration(milliseconds: 500))
+                      : Container(),
+                  // const SizedBox(
+                  //   height: 10,
+                  // ),
                 ]),
           ),
         ],
